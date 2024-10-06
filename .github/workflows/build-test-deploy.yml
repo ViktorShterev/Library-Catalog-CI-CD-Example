@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the repository
@@ -27,3 +27,29 @@ jobs:
       run: npx playwright install
     - name: Run UI tests
       run: npm run test:ui 
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: build_and_test
+    steps:
+      - name: Deploy to production
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.BACKEND_API_KEY }}
+          api-key: ${{ secrets.MY_RENDER_API_KEY }} 
+      - name: Sleep for 60 sec
+        run: sleep 60
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: deploy-backend
+    steps:
+      - name: Deploy to production
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.FRONTEND_API_KEY }}
+          api-key: ${{ secrets.MY_RENDER_API_KEY }} 
+      - name: Sleep for 60 sec
+        run: sleep 60
